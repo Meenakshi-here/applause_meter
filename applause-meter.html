@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Applause Meter</title>
+<style>
+:root{--bg:#e6ebf2;--ink:#18274a;--mute:#6c7a96;--blue:#3b6bd6;--blue2:#8db0f4;--glass:rgba(255,255,255,.62);--line:rgba(24,39,74,.1);--ok:#2f9e6b;--bad:#d1495b}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Sora","Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:radial-gradient(1000px 500px at 15% -10%,#cddcf7,transparent),radial-gradient(800px 500px at 100% 100%,#d7e3f7,transparent),var(--bg);min-height:100vh;padding:28px 16px 48px}
+h1{font-size:2.1rem;line-height:1.1;margin:0 0 6px;letter-spacing:-.02em}
+.sub{color:var(--mute);margin:0 0 22px;max-width:60ch;font-size:.95rem}
+.wrap{max-width:1180px;margin:0 auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;align-items:start}
+.phone{background:linear-gradient(180deg,#f7f9fd,#e9eef6);border-radius:38px;padding:18px;border:6px solid rgba(255,255,255,.7);box-shadow:0 20px 50px rgba(40,70,130,.18)}
+.phone h2{font-size:1.15rem;margin:4px 6px 12px}
+.chips{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
+.chip{border:0;font:inherit;font-size:.85rem;padding:10px 18px;border-radius:999px;background:rgba(255,255,255,.8);color:var(--mute);cursor:pointer;box-shadow:inset 0 0 0 1px var(--line)}
+.chip[aria-pressed=true]{background:linear-gradient(135deg,#3b6bd6,#7ea3ee);color:#fff;box-shadow:0 6px 16px rgba(59,107,214,.35)}
+.chip:focus-visible,.pill:focus-visible,button:focus-visible{outline:3px solid #1b3c97;outline-offset:2px}
+.label{font-size:.78rem;color:var(--mute);margin:12px 6px 0}
+.cam{position:relative;border-radius:28px;overflow:hidden;background:linear-gradient(135deg,#3b6bd6,#8db0f4);aspect-ratio:4/3}
+video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block}
+.beat{position:absolute;top:12px;right:12px;width:30px;height:30px;border-radius:50%;background:#fff;opacity:.15;transition:opacity .08s}
+.beat.on{opacity:1}
+.timer{position:absolute;left:14px;bottom:12px;color:#fff;font-weight:600;font-size:1.3rem;text-shadow:0 1px 6px rgba(0,0,0,.4)}
+.pill{width:100%;display:flex;align-items:center;gap:12px;border:0;font:inherit;background:rgba(255,255,255,.85);border-radius:999px;padding:8px 22px 8px 8px;margin-top:12px;cursor:pointer;box-shadow:inset 0 0 0 1px var(--line);color:var(--ink)}
+.pill .dot{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#3b6bd6,#7ea3ee);display:grid;place-items:center;color:#fff;font-size:1.1rem}
+.pill[disabled]{opacity:.5;cursor:not-allowed}
+.tiny{font-size:.78rem;color:var(--mute);margin:8px 6px}
+.hero{background:linear-gradient(135deg,#3b6bd6,#86a9f0);color:#fff;border-radius:26px;padding:18px 20px;box-shadow:0 14px 30px rgba(59,107,214,.3)}
+.hero b{font-size:.9rem;font-weight:600}
+.bar{position:relative;height:12px;border-radius:99px;background:rgba(255,255,255,.35);margin:16px 0 6px}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:#fff;width:0;transition:width .25s}
+.bar u{position:absolute;top:-6px;bottom:-6px;width:3px;background:#18274a;border-radius:2px;display:none}
+.big{text-align:center;margin:22px 0 6px;font-size:5rem;font-weight:700;color:var(--blue);letter-spacing:-.04em;line-height:1}
+.big small{font-size:1.4rem;font-weight:600;color:var(--blue2);margin-left:4px}
+.pred{text-align:center;font-weight:600;margin:4px 0 10px;min-height:1.5em}
+canvas{width:100%;display:block;border-radius:20px;background:rgba(255,255,255,.75)}
+table{width:100%;border-collapse:collapse;font-size:.78rem;margin-top:12px}
+th,td{padding:6px 3px;text-align:left;border-bottom:1px solid var(--line)}
+th{color:var(--mute);font-weight:500}
+td input{width:46px;font:inherit;border:1px solid var(--line);border-radius:8px;padding:3px 5px;background:#fff}
+.ok{color:var(--ok);font-weight:600}.bad{color:var(--bad);font-weight:600}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btns button{border:0;font:inherit;font-size:.8rem;padding:9px 14px;border-radius:999px;background:#fff;box-shadow:inset 0 0 0 1px var(--line);cursor:pointer;color:var(--ink)}
+.sum{font-size:.85rem;margin:10px 6px;line-height:1.5}
+.err{color:var(--bad);font-size:.85rem;margin:8px 6px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Applause Meter</h1>
+<p class="sub">Measure how fast a person claps using the camera, then see whether a new recording looks like slow or fast clapping. Video stays on this device; only motion numbers are saved.</p>
+
+<div class="grid">
+
+<!-- 1. RECORD -->
+<section class="phone" aria-label="Record">
+  <h2>1 · Record</h2>
+  <div class="cam"><video id="v" autoplay muted playsinline></video><div class="beat" id="beat"></div><div class="timer" id="timer"></div></div>
+  <div class="label">Target pace (the flashing dot sets the beat)</div>
+  <div class="chips" id="condChips">
+    <button class="chip" data-v="slow" aria-pressed="true">Slow · 1 clap/s</button>
+    <button class="chip" data-v="fast" aria-pressed="false">Fast · 3 claps/s</button>
+  </div>
+  <div class="label">Use this recording for</div>
+  <div class="chips" id="splitChips">
+    <button class="chip" data-v="design" aria-pressed="true">Design</button>
+    <button class="chip" data-v="test" aria-pressed="false">Held-out test</button>
+  </div>
+  <label class="tiny"><input type="checkbox" id="useMic" checked> Also record microphone as an independent check</label>
+  <button class="pill" id="camBtn"><span class="dot">●</span>Start camera</button>
+  <button class="pill" id="recBtn" disabled><span class="dot">▶</span>Record 10 seconds</button>
+  <div class="err" id="err" role="alert"></div>
+  <p class="tiny">Frame only the hands and chest of a consenting person (or yourself), with a plain background and steady phone. Count the claps yourself from the video afterwards and type it into the table.</p>
+</section>
+
+<!-- 2. LIVE -->
+<section class="phone" aria-label="Live reading">
+  <h2>2 · Live reading</h2>
+  <div class="hero">
+    <b>Where this rate falls</b>
+    <div class="bar" id="bar"><i id="fill"></i><u id="thr"></u></div>
+    <div style="display:flex;justify-content:space-between;font-size:.75rem;opacity:.9"><span>0</span><span id="thrTxt">threshold appears after design recordings</span><span>5 /s</span></div>
+  </div>
+  <div class="big"><span id="live">–</span><small>claps/s</small></div>
+  <div class="pred" id="pred">Start the camera and clap</div>
+  <canvas id="wave" width="600" height="180" aria-label="Live motion signal"></canvas>
+  <p class="tiny">Line = hand motion from camera. Dots = detected claps over the last 6 seconds.</p>
+</section>
+
+<!-- 3. RESULT -->
+<section class="phone" aria-label="Results">
+  <h2>3 · Results</h2>
+  <canvas id="chart" width="600" height="320" aria-label="Clap rate per recording"></canvas>
+  <div class="sum" id="sum">No recordings yet. Suggested plan: 4 slow + 4 fast as design, 3 slow + 3 fast as held-out test.</div>
+  <table><thead><tr><th>#</th><th>Set</th><th>Split</th><th>Cam /s</th><th>Mic /s</th><th>Hand count</th><th>Read</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+  <div class="btns">
+    <button id="dlS">Summary CSV</button><button id="dlR">Raw samples CSV</button><button id="dlP">Chart PNG</button><button id="clr">Clear all</button>
+  </div>
+</section>
+
+</div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const DUR=10, PREP=3, BPM={slow:1,fast:3};
+let cond='slow',split='design',stream=null,actx=null,an=null,micOn=false,prev=null,recording=false,rec=null,buf=[];
+let recs=[];try{recs=JSON.parse(localStorage.getItem('applause-recs')||'[]')}catch(e){}
+const cv=document.createElement('canvas');cv.width=80;cv.height=60;const cx=cv.getContext('2d',{willReadFrequently:true});
+
+function chipGroup(id,cb){const g=$(id);g.addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;g.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x===b));cb(b.dataset.v)})}
+chipGroup('condChips',v=>cond=v);chipGroup('splitChips',v=>split=v);
+
+// ---- signal analysis: high-pass, then peak picking ----
+function peaks(t,v,gapMs,k){
+  const n=v.length;if(n<10)return[];
+  const sm=v.map((_,i)=>{let s=0,c=0;for(let j=Math.max(0,i-1);j<=Math.min(n-1,i+1);j++){s+=v[j];c++}return s/c});
+  const hp=sm.map((_,i)=>{let s=0,c=0;for(let j=Math.max(0,i-15);j<=Math.min(n-1,i+15);j++){s+=sm[j];c++}return sm[i]-s/c});
+  const sd=Math.sqrt(hp.reduce((a,b)=>a+b*b,0)/n);if(sd<1e-6)return[];
+  const out=[];let last=-1e9;
+  for(let i=1;i<n-1;i++){if(hp[i]>k*sd&&hp[i]>=hp[i-1]&&hp[i]>hp[i+1]&&t[i]-last>=gapMs){out.push(i);last=t[i]}}
+  return out;
+}
+
+// ---- camera + mic ----
+$('camBtn').onclick=async()=>{
+  $('err').textContent='';
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:640,height:480},audio:false});
+    $('v').srcObject=stream;$('recBtn').disabled=false;$('camBtn').disabled=true;
+    setInterval(tick,33);
+  }catch(e){$('err').textContent='Camera blocked. Allow camera access in the browser and reload. ('+e.name+')'}
+};
+async function startMic(){
+  try{const ms=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+    actx=new (window.AudioContext||window.webkitAudioContext)();const s=actx.createMediaStreamSource(ms);an=actx.createAnalyser();an.fftSize=1024;s.connect(an);micOn=true}
+  catch(e){micOn=false;$('err').textContent='Microphone unavailable, recording camera only.'}
+}
+function rms(){if(!micOn)return null;const d=new Float32Array(an.fftSize);an.getFloatTimeDomainData(d);let s=0;for(const x of d)s+=x*x;return Math.sqrt(s/d.length)}
+
+function tick(){
+  const v=$('v');if(v.readyState<2)return;
+  cx.drawImage(v,0,0,80,60);const d=cx.getImageData(0,0,80,60).data;
+  const g=new Float32Array(4800);let diff=0;
+  for(let i=0;i<4800;i++){g[i]=.299*d[i*4]+.587*d[i*4+1]+.114*d[i*4+2];if(prev)diff+=Math.abs(g[i]-prev[i])}
+  const m=prev?diff/4800:0;prev=g;
+  const t=performance.now(),a=rms();
+  buf.push({t,m});while(buf.length&&t-buf[0].t>6000)buf.shift();
+  if(recording&&rec.go)rec.s.push({t:t-rec.t0,m,a});
+  drawLive();
+}
+
+function drawLive(){
+  const c=$('wave'),x=c.getContext('2d'),W=c.width,H=c.height;x.clearRect(0,0,W,H);
+  if(buf.length<10)return;
+  const t=buf.map(b=>b.t),v=buf.map(b=>b.m),mx=Math.max(...v,1),t0=t[t.length-1]-6000;
+  x.strokeStyle='#3b6bd6';x.lineWidth=2.5;x.beginPath();
+  v.forEach((y,i)=>{const px=(t[i]-t0)/6000*W,py=H-10-(y/mx)*(H-24);i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke();
+  const pk=peaks(t,v,220,.6);x.fillStyle='#18274a';
+  pk.forEach(i=>{x.beginPath();x.arc((t[i]-t0)/6000*W,H-10-(v[i]/mx)*(H-24),6,0,7);x.fill()});
+  const span=Math.min(6,(t[t.length-1]-t[0])/1000);
+  if(span>=4.5&&mx>0.8){const r=pk.length/span;showLive(r)}else{$('live').textContent='–';$('pred').textContent=mx>0.8?'Reading… keep clapping':'No clapping seen'}
+}
+function threshold(){
+  const d=recs.filter(r=>r.split==='design');
+  const a=d.filter(r=>r.cond==='slow'),b=d.filter(r=>r.cond==='fast');
+  if(!a.length||!b.length)return null;
+  const m=l=>l.reduce((s,r)=>s+r.rcam,0)/l.length;return(m(a)+m(b))/2;
+}
+function showLive(r){
+  $('live').textContent=r.toFixed(1);$('fill').style.width=Math.min(100,r/5*100)+'%';
+  const th=threshold();
+  if(th!==null){$('thr').style.display='block';$('thr').style.left=(th/5*100)+'%';$('thrTxt').textContent='threshold '+th.toFixed(2)+'/s';
+    $('pred').textContent='Looks like: '+(r>th?'FAST clapping':'SLOW clapping')}
+  else $('pred').textContent='Record design clips to set a threshold'
+}
+
+// ---- recording ----
+$('recBtn').onclick=async()=>{
+  if(recording)return;
+  recording=true;$('recBtn').disabled=true;
+  if($('useMic').checked&&!micOn)await startMic();
+  const gap=1000/BPM[cond];rec={cond,split,s:[],go:false,t0:0};
+  const beat=$('beat');let bi=null;
+  for(let i=PREP;i>0;i--){$('timer').textContent='Get ready '+i;await sleep(1000)}
+  rec.t0=performance.now();rec.go=true;
+  const start=performance.now();
+  bi=setInterval(()=>{beat.classList.add('on');setTimeout(()=>beat.classList.remove('on'),90)},gap);
+  const up=setInterval(()=>{$('timer').textContent=Math.max(0,DUR-(performance.now()-start)/1000).toFixed(0)+' s'},200);
+  await sleep(DUR*1000);
+  clearInterval(bi);clearInterval(up);rec.go=false;recording=false;$('timer').textContent='';$('recBtn').disabled=false;
+  finish();
+};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+function finish(){
+  const s=rec.s;if(s.length<50){$('err').textContent='Too few frames captured. Try again.';return}
+  const t=s.map(o=>o.t),dur=(t[t.length-1]-t[0])/1000;
+  const pc=peaks(t,s.map(o=>o.m),220,.6);
+  let pm=null;if(s[0].a!==null)pm=peaks(t,s.map(o=>o.a),150,1.2);
+  const id=(recs.length?Math.max(...recs.map(r=>r.id)):0)+1;
+  recs.push({id,cond:rec.cond,split:rec.split,dur,ncam:pc.length,rcam:pc.length/dur,nmic:pm?pm.length:null,rmic:pm?pm.length/dur:null,man:null,samples:s.map(o=>[Math.round(o.t),+o.m.toFixed(3),o.a===null?'':+o.a.toFixed(5)])});
+  save();render();
+}
+function save(){try{localStorage.setItem('applause-recs',JSON.stringify(recs))}catch(e){}}
+
+// ---- results ----
+function pred(r,th){return th===null?null:(r.rcam>th?'fast':'slow')}
+function render(){
+  const th=threshold();const tb=$('rows');tb.innerHTML='';
+  recs.forEach(r=>{
+    const p=pred(r,th);const tr=document.createElement('tr');
+    const rm=r.man!=null?r.man/r.dur:null;
+    let chk='';if(rm!==null){const okc=(r.cond==='fast')===(rm>2);chk=okc?'<span class="ok">label ok</span>':'<span class="bad">check label</span>'}
+    tr.innerHTML=`<td>${r.id}</td><td>${r.cond}</td><td>${r.split}</td><td>${r.rcam.toFixed(2)}</td><td>${r.rmic==null?'–':r.rmic.toFixed(2)}</td><td><input type="number" min="0" value="${r.man??''}" aria-label="Claps counted by hand for recording ${r.id}" data-id="${r.id}"> ${chk}</td><td>${p?(p===r.cond?'<span class="ok">'+p+' ✓</span>':'<span class="bad">'+p+' ✗</span>'):'–'}</td><td><button aria-label="Delete recording ${r.id}" data-del="${r.id}" style="border:0;background:none;cursor:pointer">✕</button></td>`;
+    tb.appendChild(tr)});
+  tb.querySelectorAll('input').forEach(i=>i.onchange=()=>{const r=recs.find(x=>x.id==i.dataset.id);r.man=i.value===''?null:+i.value;save();render()});
+  tb.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{recs=recs.filter(x=>x.id!=b.dataset.del);save();render()});
+  const te=recs.filter(r=>r.split==='test'&&th!==null);
+  const okn=te.filter(r=>pred(r,th)===r.cond).length;
+  let msg=th===null?'Need at least one slow and one fast design recording to set the threshold.':`Threshold ${th.toFixed(2)} claps/s (midpoint of design means). `;
+  if(te.length){msg+=`Held-out test: ${okn}/${te.length} correct (${Math.round(okn/te.length*100)}%). `;
+    const wrong=te.filter(r=>pred(r,th)!==r.cond).map(r=>'#'+r.id);if(wrong.length)msg+='Misses: '+wrong.join(', ')+'. '}
+  if(th!==null&&te.length<4)msg+='Few test clips, so treat accuracy as rough.';
+  if(recs.length)$('sum').textContent=msg;
+  drawChart(th);
+}
+function drawChart(th){
+  const c=$('chart'),x=c.getContext('2d'),W=c.width,H=c.height;x.clearRect(0,0,W,H);
+  const L=50,R=20,T=30,B=50,ymax=5;
+  const Y=v=>H-B-(v/ymax)*(H-T-B);
+  x.font='15px system-ui';x.fillStyle='#6c7a96';x.strokeStyle='rgba(24,39,74,.12)';x.lineWidth=1;
+  for(let v=0;v<=5;v++){x.beginPath();x.moveTo(L,Y(v));x.lineTo(W-R,Y(v));x.stroke();x.fillText(v,24,Y(v)+5)}
+  x.save();x.translate(12,H/2);x.rotate(-Math.PI/2);x.fillText('claps/s (camera)',-50,0);x.restore();
+  const cols={slow:L+(W-L-R)*.27,fast:L+(W-L-R)*.73};
+  x.fillStyle='#18274a';x.font='600 16px system-ui';x.fillText('Slow',cols.slow-18,H-18);x.fillText('Fast',cols.fast-17,H-18);
+  if(th!==null){x.setLineDash([8,6]);x.strokeStyle='#18274a';x.lineWidth=2;x.beginPath();x.moveTo(L,Y(th));x.lineTo(W-R,Y(th));x.stroke();x.setLineDash([]);x.font='13px system-ui';x.fillStyle='#18274a';x.fillText('threshold '+th.toFixed(2),L+6,Y(th)-6)}
+  ['slow','fast'].forEach(k=>{recs.filter(r=>r.cond===k).forEach((r,i)=>{
+    const px=cols[k]+((i%7)-3)*22,py=Y(Math.min(r.rcam,ymax));
+    x.beginPath();x.arc(px,py,9,0,7);
+    if(r.split==='design'){x.fillStyle='#3b6bd6';x.fill()}else{x.fillStyle='#fff';x.fill();x.lineWidth=3;x.strokeStyle=th!==null&&((r.rcam>th?'fast':'slow')!==r.cond)?'#d1495b':'#3b6bd6';x.stroke()}
+  })});
+  x.font='13px system-ui';x.fillStyle='#6c7a96';x.fillText('● design   ○ held-out test (red = wrong)',L,18);
+}
+
+// ---- export ----
+function dl(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click()}
+$('dlS').onclick=()=>{const th=threshold();
+  let s='rec_id,true_condition,split,duration_s,cam_claps,cam_rate,mic_claps,mic_rate,hand_count,hand_rate,predicted,correct\n';
+  recs.forEach(r=>{const p=pred(r,th);s+=[r.id,r.cond,r.split,r.dur.toFixed(2),r.ncam,r.rcam.toFixed(3),r.nmic??'',r.rmic==null?'':r.rmic.toFixed(3),r.man??'',r.man==null?'':(r.man/r.dur).toFixed(3),p??'',p?(p===r.cond?1:0):''].join(',')+'\n'});
+  dl('applause_summary.csv',s,'text/csv')};
+$('dlR').onclick=()=>{let s='rec_id,true_condition,split,t_ms,motion,audio_rms\n';
+  recs.forEach(r=>r.samples.forEach(o=>{s+=[r.id,r.cond,r.split,...o].join(',')+'\n'}));dl('applause_raw.csv',s,'text/csv')};
+$('dlP').onclick=()=>{const a=document.createElement('a');a.href=$('chart').toDataURL('image/png');a.download='applause_chart.png';a.click()};
+$('clr').onclick=()=>{if(confirm('Delete all recordings?')){recs=[];save();render();$('sum').textContent='No recordings yet.'}};
+render();
+</script>
+</body>
+</html>
