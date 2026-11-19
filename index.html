@@ -5,58 +5,90 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Applause Meter</title>
 <style>
-:root{--bg:#e6ebf2;--ink:#18274a;--mute:#6c7a96;--blue:#3b6bd6;--blue2:#8db0f4;--glass:rgba(255,255,255,.62);--line:rgba(24,39,74,.1);--ok:#2f9e6b;--bad:#d1495b}
+:root{--ink:#18274a;--mute:#66748f;--blue:#3b6bd6;--vio:#8a5cf0;--line:rgba(24,39,74,.1);--ok:#2f9e6b;--bad:#d1495b}
 *{box-sizing:border-box}
-body{margin:0;font-family:"Sora","Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:radial-gradient(1000px 500px at 15% -10%,#cddcf7,transparent),radial-gradient(800px 500px at 100% 100%,#d7e3f7,transparent),var(--bg);min-height:100vh;padding:28px 16px 48px}
-h1{font-size:2.1rem;line-height:1.1;margin:0 0 6px;letter-spacing:-.02em}
-.sub{color:var(--mute);margin:0 0 22px;max-width:60ch;font-size:.95rem}
-.wrap{max-width:1180px;margin:0 auto}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;align-items:start}
-.phone{background:linear-gradient(180deg,#f7f9fd,#e9eef6);border-radius:38px;padding:18px;border:6px solid rgba(255,255,255,.7);box-shadow:0 20px 50px rgba(40,70,130,.18)}
+body{margin:0;font-family:"Sora","Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:linear-gradient(180deg,#0c1738 0%,#18306b 55%,#2d4fa5 100%);min-height:100vh;padding:30px 16px 190px;overflow-x:hidden}
+/* ---------- themed stage backdrop ---------- */
+.stage{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.beam{position:absolute;top:-5%;width:42vw;height:110%;background:linear-gradient(180deg,rgba(190,215,255,.5),rgba(190,215,255,0) 85%);mix-blend-mode:screen;opacity:.55;transition:opacity .15s;transform-origin:50% 0}
+.beam.l{left:2vw;clip-path:polygon(46% 0,54% 0,100% 100%,0 100%);animation:swayL 9s ease-in-out infinite}
+.beam.r{right:2vw;clip-path:polygon(46% 0,54% 0,100% 100%,0 100%);animation:swayR 11s ease-in-out infinite}
+.beam.flash{opacity:1}
+@keyframes swayL{50%{transform:rotate(7deg)}}@keyframes swayR{50%{transform:rotate(-7deg)}}
+.curtain{position:absolute;top:0;bottom:0;width:11vw;min-width:46px;background:repeating-linear-gradient(90deg,#1b2d6e 0 14px,#2b44a0 14px 30px,#1b2d6e 30px 44px);box-shadow:inset -18px 0 30px rgba(0,0,0,.45)}
+.curtain.l{left:0;border-radius:0 0 90% 0/0 0 18% 0}.curtain.r{right:0;transform:scaleX(-1);border-radius:0 0 90% 0/0 0 18% 0}
+.valance{position:absolute;top:0;left:0;right:0;height:46px;background:linear-gradient(180deg,#0a1230,#1b2d6e);border-bottom:3px solid #6f8fe0;border-radius:0 0 50% 50%/0 0 100% 100%}
+#aud{position:absolute;left:0;bottom:0;width:100%;height:170px}
+.mote{position:absolute;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.5);animation:rise linear infinite}
+@keyframes rise{from{transform:translateY(0)}to{transform:translateY(-110vh)}}
+header{position:relative;z-index:1;max-width:1180px;margin:30px auto 22px;color:#fff;text-align:center}
+h1{font-size:clamp(2.2rem,6vw,3.6rem);line-height:1.05;margin:0 0 8px;letter-spacing:-.03em;text-shadow:0 4px 30px rgba(120,160,255,.6)}
+header p{margin:0 auto;max-width:56ch;color:#c9d7f5;font-size:.95rem}
+.grid{position:relative;z-index:1;max-width:1180px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px;align-items:start}
+.phone{background:linear-gradient(180deg,rgba(250,252,255,.94),rgba(233,239,248,.94));border-radius:38px;padding:18px;border:6px solid rgba(255,255,255,.55);box-shadow:0 24px 60px rgba(5,12,40,.5);backdrop-filter:blur(8px)}
 .phone h2{font-size:1.15rem;margin:4px 6px 12px}
 .chips{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
-.chip{border:0;font:inherit;font-size:.85rem;padding:10px 18px;border-radius:999px;background:rgba(255,255,255,.8);color:var(--mute);cursor:pointer;box-shadow:inset 0 0 0 1px var(--line)}
-.chip[aria-pressed=true]{background:linear-gradient(135deg,#3b6bd6,#7ea3ee);color:#fff;box-shadow:0 6px 16px rgba(59,107,214,.35)}
-.chip:focus-visible,.pill:focus-visible,button:focus-visible{outline:3px solid #1b3c97;outline-offset:2px}
+.chip{border:0;font:inherit;font-size:.85rem;padding:10px 18px;border-radius:999px;background:rgba(255,255,255,.85);color:var(--mute);cursor:pointer;box-shadow:inset 0 0 0 1px var(--line);transition:transform .15s}
+.chip:hover{transform:translateY(-2px)}
+.chip[aria-pressed=true]{background:linear-gradient(135deg,#3b6bd6,#8a5cf0);color:#fff;box-shadow:0 6px 16px rgba(80,80,220,.4)}
+:focus-visible{outline:3px solid #1b3c97;outline-offset:2px}
 .label{font-size:.78rem;color:var(--mute);margin:12px 6px 0}
-.cam{position:relative;border-radius:28px;overflow:hidden;background:linear-gradient(135deg,#3b6bd6,#8db0f4);aspect-ratio:4/3}
+.cam{position:relative;border-radius:28px;overflow:hidden;background:linear-gradient(135deg,#1d3a8a,#8db0f4);aspect-ratio:4/3}
 video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block}
-.beat{position:absolute;top:12px;right:12px;width:30px;height:30px;border-radius:50%;background:#fff;opacity:.15;transition:opacity .08s}
-.beat.on{opacity:1}
-.timer{position:absolute;left:14px;bottom:12px;color:#fff;font-weight:600;font-size:1.3rem;text-shadow:0 1px 6px rgba(0,0,0,.4)}
-.pill{width:100%;display:flex;align-items:center;gap:12px;border:0;font:inherit;background:rgba(255,255,255,.85);border-radius:999px;padding:8px 22px 8px 8px;margin-top:12px;cursor:pointer;box-shadow:inset 0 0 0 1px var(--line);color:var(--ink)}
-.pill .dot{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#3b6bd6,#7ea3ee);display:grid;place-items:center;color:#fff;font-size:1.1rem}
+.beat{position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;background:#fff;opacity:.2;transition:opacity .08s,transform .08s}
+.beat.on{opacity:1;transform:scale(1.3);box-shadow:0 0 0 10px rgba(255,255,255,.3)}
+.timer{position:absolute;left:14px;bottom:12px;color:#fff;font-weight:600;font-size:1.3rem;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+.pill{width:100%;display:flex;align-items:center;gap:12px;border:0;font:inherit;background:rgba(255,255,255,.9);border-radius:999px;padding:8px 22px 8px 8px;margin-top:12px;cursor:pointer;box-shadow:inset 0 0 0 1px var(--line);color:var(--ink)}
+.pill .dot{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#3b6bd6,#8a5cf0);display:grid;place-items:center;color:#fff;font-size:1.1rem}
 .pill[disabled]{opacity:.5;cursor:not-allowed}
 .tiny{font-size:.78rem;color:var(--mute);margin:8px 6px}
-.hero{background:linear-gradient(135deg,#3b6bd6,#86a9f0);color:#fff;border-radius:26px;padding:18px 20px;box-shadow:0 14px 30px rgba(59,107,214,.3)}
-.hero b{font-size:.9rem;font-weight:600}
-.bar{position:relative;height:12px;border-radius:99px;background:rgba(255,255,255,.35);margin:16px 0 6px}
-.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:#fff;width:0;transition:width .25s}
-.bar u{position:absolute;top:-6px;bottom:-6px;width:3px;background:#18274a;border-radius:2px;display:none}
-.big{text-align:center;margin:22px 0 6px;font-size:5rem;font-weight:700;color:var(--blue);letter-spacing:-.04em;line-height:1}
-.big small{font-size:1.4rem;font-weight:600;color:var(--blue2);margin-left:4px}
-.pred{text-align:center;font-weight:600;margin:4px 0 10px;min-height:1.5em}
-canvas{width:100%;display:block;border-radius:20px;background:rgba(255,255,255,.75)}
-table{width:100%;border-collapse:collapse;font-size:.78rem;margin-top:12px}
+.err{color:var(--bad);font-size:.85rem;margin:8px 6px}
+/* live */
+.orbwrap{position:relative;display:grid;place-items:center;height:110px}
+.orb{position:relative;width:84px;height:84px;border-radius:50%;background:radial-gradient(circle at 30% 25%,#fff,#b9ccf7 55%,#7f9ae6);display:grid;place-items:center;font-size:2.4rem;box-shadow:0 10px 30px rgba(80,100,220,.45)}
+.orb::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:3px solid #8a5cf0;opacity:0}
+.orb.pop{animation:pop .45s ease-out}.orb.pop::after{animation:ring .6s ease-out}
+@keyframes pop{30%{transform:scale(1.14) rotate(-6deg)}}
+@keyframes ring{from{opacity:.9;transform:scale(1)}to{opacity:0;transform:scale(1.9)}}
+.conf{position:absolute;left:50%;top:50%;width:0;height:0}
+.conf span{position:absolute;width:9px;height:9px;border-radius:2px}
+.dialbox{margin-top:-6px}
+svg.dial{width:100%;display:block}
+.big{text-align:center;margin:-6px 0 0;font-size:4.2rem;font-weight:700;letter-spacing:-.04em;line-height:1;color:var(--blue)}
+.big small{font-size:1.2rem;font-weight:600;color:#8aa4e8;margin-left:4px}
+.mood{text-align:center;font-weight:600;margin:6px 0 2px}
+.verdict{margin:8px auto 4px;width:fit-content;padding:8px 18px;border-radius:999px;font-weight:600;font-size:.9rem;background:#e8edf7;color:var(--mute);transition:background .3s,color .3s}
+.verdict.slow{background:#dbe6fc;color:#2150b8}.verdict.fast{background:#e8defd;color:#6a38d6}
+.conf-t{text-align:center;font-size:.78rem;color:var(--mute);min-height:1.2em}
+canvas{width:100%;display:block;border-radius:20px;background:rgba(255,255,255,.8)}
+.cwrap{position:relative}
+.tip{position:absolute;pointer-events:none;background:#18274a;color:#fff;font-size:.75rem;line-height:1.4;padding:8px 10px;border-radius:12px;opacity:0;transition:opacity .12s;white-space:nowrap;z-index:5;transform:translate(-50%,-110%)}
+.sum{font-size:.85rem;margin:10px 6px;line-height:1.5}
+table{width:100%;border-collapse:collapse;font-size:.78rem;margin-top:10px}
 th,td{padding:6px 3px;text-align:left;border-bottom:1px solid var(--line)}
 th{color:var(--mute);font-weight:500}
+tbody tr{cursor:pointer}tbody tr.sel{background:rgba(138,92,240,.12)}
 td input{width:46px;font:inherit;border:1px solid var(--line);border-radius:8px;padding:3px 5px;background:#fff}
 .ok{color:var(--ok);font-weight:600}.bad{color:var(--bad);font-weight:600}
 .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .btns button{border:0;font:inherit;font-size:.8rem;padding:9px 14px;border-radius:999px;background:#fff;box-shadow:inset 0 0 0 1px var(--line);cursor:pointer;color:var(--ink)}
-.sum{font-size:.85rem;margin:10px 6px;line-height:1.5}
-.err{color:var(--bad);font-size:.85rem;margin:8px 6px}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<div class="wrap">
-<h1>Applause Meter</h1>
-<p class="sub">Measure how fast a person claps using the camera, then see whether a new recording looks like slow or fast clapping. Video stays on this device; only motion numbers are saved.</p>
+<div class="stage" aria-hidden="true">
+  <div class="beam l" id="bl"></div><div class="beam r" id="br"></div>
+  <div class="curtain l"></div><div class="curtain r"></div><div class="valance"></div>
+  <svg id="aud" preserveAspectRatio="none"></svg>
+</div>
+
+<header>
+  <h1>Applause Meter</h1>
+  <p>Point the camera at clapping hands. The meter turns hand motion into claps per second, and tells you whether it sounds like slow or fast applause.</p>
+</header>
 
 <div class="grid">
 
-<!-- 1. RECORD -->
 <section class="phone" aria-label="Record">
   <h2>1 · Record</h2>
   <div class="cam"><video id="v" autoplay muted playsinline></video><div class="beat" id="beat"></div><div class="timer" id="timer"></div></div>
@@ -74,28 +106,39 @@ td input{width:46px;font:inherit;border:1px solid var(--line);border-radius:8px;
   <button class="pill" id="camBtn"><span class="dot">●</span>Start camera</button>
   <button class="pill" id="recBtn" disabled><span class="dot">▶</span>Record 10 seconds</button>
   <div class="err" id="err" role="alert"></div>
-  <p class="tiny">Frame only the hands and chest of a consenting person (or yourself), with a plain background and steady phone. Count the claps yourself from the video afterwards and type it into the table.</p>
+  <p class="tiny">Frame only the hands and chest of a consenting person (or yourself) against a plain background. Count the claps from the video and type the number into the table.</p>
 </section>
 
-<!-- 2. LIVE -->
 <section class="phone" aria-label="Live reading">
   <h2>2 · Live reading</h2>
-  <div class="hero">
-    <b>Where this rate falls</b>
-    <div class="bar" id="bar"><i id="fill"></i><u id="thr"></u></div>
-    <div style="display:flex;justify-content:space-between;font-size:.75rem;opacity:.9"><span>0</span><span id="thrTxt">threshold appears after design recordings</span><span>5 /s</span></div>
+  <div class="orbwrap"><div class="orb" id="orb">👏</div><div class="conf" id="conf"></div></div>
+  <div class="dialbox">
+    <svg class="dial" viewBox="0 0 300 178" role="img" aria-label="Clap rate dial from 0 to 5 claps per second">
+      <defs><linearGradient id="gr" x1="0" x2="1"><stop offset="0" stop-color="#3b6bd6"/><stop offset="1" stop-color="#8a5cf0"/></linearGradient></defs>
+      <path d="M32 150A118 118 0 0 1 268 150" fill="none" stroke="#dfe6f3" stroke-width="22" stroke-linecap="round"/>
+      <path id="arc" d="M32 150A118 118 0 0 1 268 150" fill="none" stroke="url(#gr)" stroke-width="22" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100" style="transition:stroke-dashoffset .3s"/>
+      <g id="ticks"></g>
+      <line id="thrLine" stroke="#18274a" stroke-width="3" stroke-dasharray="4 3" opacity="0"/>
+      <text id="thrLbl" font-size="10" fill="#18274a" text-anchor="middle" opacity="0"></text>
+      <g id="needle" style="transform-origin:150px 150px;transform:rotate(-90deg);transition:transform .25s cubic-bezier(.3,1.6,.5,1)"><line x1="150" y1="150" x2="150" y2="52" stroke="#18274a" stroke-width="4" stroke-linecap="round"/><circle cx="150" cy="150" r="10" fill="#18274a"/></g>
+      <text x="32" y="174" font-size="11" fill="#2150b8" text-anchor="middle">slow</text>
+      <text x="268" y="174" font-size="11" fill="#6a38d6" text-anchor="middle">fast</text>
+    </svg>
   </div>
   <div class="big"><span id="live">–</span><small>claps/s</small></div>
-  <div class="pred" id="pred">Start the camera and clap</div>
-  <canvas id="wave" width="600" height="180" aria-label="Live motion signal"></canvas>
-  <p class="tiny">Line = hand motion from camera. Dots = detected claps over the last 6 seconds.</p>
+  <div class="mood" id="mood">Waiting for applause</div>
+  <div class="verdict" id="pred">No threshold yet</div>
+  <div class="conf-t" id="confT"></div>
+  <canvas id="wave" width="600" height="170" style="margin-top:8px" aria-label="Live motion signal"></canvas>
+  <p class="tiny">Line = hand motion seen by the camera. Dots = detected claps in the last 6 seconds.</p>
 </section>
 
-<!-- 3. RESULT -->
 <section class="phone" aria-label="Results">
   <h2>3 · Results</h2>
-  <canvas id="chart" width="600" height="320" aria-label="Clap rate per recording"></canvas>
+  <div class="cwrap"><canvas id="chart" width="600" height="340" aria-label="Clap rate per recording"></canvas><div class="tip" id="tip"></div></div>
   <div class="sum" id="sum">No recordings yet. Suggested plan: 4 slow + 4 fast as design, 3 slow + 3 fast as held-out test.</div>
+  <canvas id="detail" width="600" height="210" aria-label="Selected recording signal"></canvas>
+  <div class="tiny" id="detTxt">Tap a dot or a table row to inspect that recording.</div>
   <table><thead><tr><th>#</th><th>Set</th><th>Split</th><th>Cam /s</th><th>Mic /s</th><th>Hand count</th><th>Read</th><th></th></tr></thead><tbody id="rows"></tbody></table>
   <div class="btns">
     <button id="dlS">Summary CSV</button><button id="dlR">Raw samples CSV</button><button id="dlP">Chart PNG</button><button id="clr">Clear all</button>
@@ -103,19 +146,33 @@ td input{width:46px;font:inherit;border:1px solid var(--line);border-radius:8px;
 </section>
 
 </div>
-</div>
 
 <script>
 const $=id=>document.getElementById(id);
-const DUR=10, PREP=3, BPM={slow:1,fast:3};
-let cond='slow',split='design',stream=null,actx=null,an=null,micOn=false,prev=null,recording=false,rec=null,buf=[];
+const DUR=10,PREP=3,RATE={slow:1,fast:3},COL={slow:'#3b6bd6',fast:'#8a5cf0'};
+const REDUCE=matchMedia('(prefers-reduced-motion:reduce)').matches;
+let cond='slow',split='design',stream=null,actx=null,an=null,micOn=false,prev=null,recording=false,rec=null,buf=[],sel=null,lastFire=0,disp=0;
 let recs=[];try{recs=JSON.parse(localStorage.getItem('applause-recs')||'[]')}catch(e){}
 const cv=document.createElement('canvas');cv.width=80;cv.height=60;const cx=cv.getContext('2d',{willReadFrequently:true});
+
+/* ---------- themed backdrop: audience silhouettes + dust motes ---------- */
+(function(){
+  const s=$('aud'),W=1200,H=170;s.setAttribute('viewBox',`0 0 ${W} ${H}`);let h='';
+  [[95,'#162458',26],[135,'#0b1431',32]].forEach(([y,c,r],row)=>{
+    for(let x=-10;x<W+40;x+=62+Math.random()*14){const hx=x+Math.random()*10,hy=y+Math.random()*12;
+      h+=`<circle cx="${hx}" cy="${hy}" r="${r*.62}" fill="${c}"/><rect x="${hx-r}" y="${hy+r*.5}" width="${r*2}" height="120" rx="${r*.8}" fill="${c}"/>`}});
+  s.innerHTML=h;
+  if(!REDUCE)for(let i=0;i<22;i++){const m=document.createElement('i');m.className='mote';m.style.left=Math.random()*100+'vw';m.style.bottom='-10px';m.style.opacity=Math.random()*.5;m.style.animationDuration=(14+Math.random()*20)+'s';m.style.animationDelay=(-Math.random()*30)+'s';m.style.transform='scale('+(.4+Math.random())+')';document.querySelector('.stage').appendChild(m)}
+  // dial ticks
+  let t='';for(let v=0;v<=5;v++){const a=Math.PI-v/5*Math.PI,c=Math.cos(a),n=Math.sin(a);
+    t+=`<text x="${150+c*86}" y="${150-n*86+4}" font-size="11" fill="#66748f" text-anchor="middle">${v}</text>`}
+  $('ticks').innerHTML=t;
+})();
 
 function chipGroup(id,cb){const g=$(id);g.addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;g.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',x===b));cb(b.dataset.v)})}
 chipGroup('condChips',v=>cond=v);chipGroup('splitChips',v=>split=v);
 
-// ---- signal analysis: high-pass, then peak picking ----
+/* ---------- signal analysis: high-pass then peak picking ---------- */
 function peaks(t,v,gapMs,k){
   const n=v.length;if(n<10)return[];
   const sm=v.map((_,i)=>{let s=0,c=0;for(let j=Math.max(0,i-1);j<=Math.min(n-1,i+1);j++){s+=v[j];c++}return s/c});
@@ -126,14 +183,12 @@ function peaks(t,v,gapMs,k){
   return out;
 }
 
-// ---- camera + mic ----
+/* ---------- camera + mic ---------- */
 $('camBtn').onclick=async()=>{
   $('err').textContent='';
-  try{
-    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:640,height:480},audio:false});
-    $('v').srcObject=stream;$('recBtn').disabled=false;$('camBtn').disabled=true;
-    setInterval(tick,33);
-  }catch(e){$('err').textContent='Camera blocked. Allow camera access in the browser and reload. ('+e.name+')'}
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:640,height:480},audio:false});
+    $('v').srcObject=stream;$('recBtn').disabled=false;$('camBtn').disabled=true;setInterval(tick,33)}
+  catch(e){$('err').textContent='Camera blocked. Allow camera access in the browser and reload. ('+e.name+')'}
 };
 async function startMic(){
   try{const ms=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
@@ -154,109 +209,152 @@ function tick(){
   drawLive();
 }
 
+/* ---------- live view ---------- */
+function clapFx(){
+  const o=$('orb');o.classList.remove('pop');void o.offsetWidth;o.classList.add('pop');
+  ['bl','br'].forEach(i=>{const b=$(i);b.classList.add('flash');setTimeout(()=>b.classList.remove('flash'),140)});
+  if(REDUCE)return;
+  const cols=['#3b6bd6','#8a5cf0','#8db0f4','#ffd36e','#ff7aa8'];
+  for(let i=0;i<7;i++){const s=document.createElement('span');s.style.background=cols[i%5];$('conf').appendChild(s);
+    const a=Math.random()*Math.PI*2,r=50+Math.random()*40;
+    s.animate([{transform:'translate(0,0) rotate(0)',opacity:1},{transform:`translate(${Math.cos(a)*r}px,${Math.sin(a)*r-20}px) rotate(${Math.random()*360}deg)`,opacity:0}],{duration:800,easing:'ease-out'}).onfinish=()=>s.remove()}
+}
 function drawLive(){
   const c=$('wave'),x=c.getContext('2d'),W=c.width,H=c.height;x.clearRect(0,0,W,H);
   if(buf.length<10)return;
   const t=buf.map(b=>b.t),v=buf.map(b=>b.m),mx=Math.max(...v,1),t0=t[t.length-1]-6000;
-  x.strokeStyle='#3b6bd6';x.lineWidth=2.5;x.beginPath();
+  const grd=x.createLinearGradient(0,0,W,0);grd.addColorStop(0,'#3b6bd6');grd.addColorStop(1,'#8a5cf0');
+  x.strokeStyle=grd;x.lineWidth=3;x.lineJoin='round';x.beginPath();
   v.forEach((y,i)=>{const px=(t[i]-t0)/6000*W,py=H-10-(y/mx)*(H-24);i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke();
-  const pk=peaks(t,v,220,.6);x.fillStyle='#18274a';
-  pk.forEach(i=>{x.beginPath();x.arc((t[i]-t0)/6000*W,H-10-(v[i]/mx)*(H-24),6,0,7);x.fill()});
+  const pk=peaks(t,v,220,.6);
+  pk.forEach(i=>{const px=(t[i]-t0)/6000*W,py=H-10-(v[i]/mx)*(H-24);x.fillStyle='#fff';x.strokeStyle='#18274a';x.lineWidth=3;x.beginPath();x.arc(px,py,7,0,7);x.fill();x.stroke()});
+  if(mx>.8&&pk.length){const lt=t[pk[pk.length-1]];if(lt>lastFire&&lt<t[t.length-1]-30){lastFire=lt;clapFx()}}
   const span=Math.min(6,(t[t.length-1]-t[0])/1000);
-  if(span>=4.5&&mx>0.8){const r=pk.length/span;showLive(r)}else{$('live').textContent='–';$('pred').textContent=mx>0.8?'Reading… keep clapping':'No clapping seen'}
+  if(span>=4.5&&mx>.8)showLive(pk.length/span);else showLive(null,mx>.8);
 }
 function threshold(){
-  const d=recs.filter(r=>r.split==='design');
-  const a=d.filter(r=>r.cond==='slow'),b=d.filter(r=>r.cond==='fast');
+  const d=recs.filter(r=>r.split==='design'),a=d.filter(r=>r.cond==='slow'),b=d.filter(r=>r.cond==='fast');
   if(!a.length||!b.length)return null;
   const m=l=>l.reduce((s,r)=>s+r.rcam,0)/l.length;return(m(a)+m(b))/2;
 }
-function showLive(r){
-  $('live').textContent=r.toFixed(1);$('fill').style.width=Math.min(100,r/5*100)+'%';
+function setDial(v,th){
+  disp+=(v-disp)*.35;const p=Math.min(1,disp/5);
+  $('arc').style.strokeDashoffset=100-p*100;
+  $('needle').style.transform=`rotate(${-90+p*180}deg)`;
+  const L=$('thrLine'),T=$('thrLbl');
+  if(th!==null){const a=Math.PI-Math.min(th,5)/5*Math.PI,c=Math.cos(a),n=Math.sin(a);
+    L.setAttribute('x1',150+c*96);L.setAttribute('y1',150-n*96);L.setAttribute('x2',150+c*140);L.setAttribute('y2',150-n*140);L.setAttribute('opacity',1);
+    T.setAttribute('x',150+c*152);T.setAttribute('y',150-n*152+3);T.textContent=th.toFixed(1);T.setAttribute('opacity',1)}
+}
+function showLive(r,moving){
   const th=threshold();
-  if(th!==null){$('thr').style.display='block';$('thr').style.left=(th/5*100)+'%';$('thrTxt').textContent='threshold '+th.toFixed(2)+'/s';
-    $('pred').textContent='Looks like: '+(r>th?'FAST clapping':'SLOW clapping')}
-  else $('pred').textContent='Record design clips to set a threshold'
+  if(r===null){setDial(0,th);$('live').textContent='–';$('mood').textContent=moving?'Reading… keep clapping':'Waiting for applause';
+    $('pred').className='verdict';$('pred').textContent=th===null?'No threshold yet':'Waiting for a reading';$('confT').textContent='';return}
+  setDial(r,th);$('live').textContent=r.toFixed(1);
+  $('mood').textContent=r<.4?'Barely any clapping':r<1.5?'Slow, polite applause':r<2.5?'Steady applause':'Fast, excited applause';
+  if(th===null){$('pred').className='verdict';$('pred').textContent='Record design clips to set a threshold';$('confT').textContent='';return}
+  const f=r>th;$('pred').className='verdict '+(f?'fast':'slow');$('pred').textContent='Reads as '+(f?'FAST':'SLOW')+' clapping';
+  const m=Math.abs(r-th)/th;$('confT').textContent=m<.15?'Borderline: close to the threshold, low confidence':m<.4?'Fairly clear':'Clear';
 }
 
-// ---- recording ----
+/* ---------- recording ---------- */
 $('recBtn').onclick=async()=>{
-  if(recording)return;
-  recording=true;$('recBtn').disabled=true;
+  if(recording)return;recording=true;$('recBtn').disabled=true;
   if($('useMic').checked&&!micOn)await startMic();
-  const gap=1000/BPM[cond];rec={cond,split,s:[],go:false,t0:0};
-  const beat=$('beat');let bi=null;
+  const gap=1000/RATE[cond];rec={cond,split,s:[],go:false,t0:0};
   for(let i=PREP;i>0;i--){$('timer').textContent='Get ready '+i;await sleep(1000)}
-  rec.t0=performance.now();rec.go=true;
-  const start=performance.now();
-  bi=setInterval(()=>{beat.classList.add('on');setTimeout(()=>beat.classList.remove('on'),90)},gap);
+  rec.t0=performance.now();rec.go=true;const start=rec.t0;
+  const bi=setInterval(()=>{$('beat').classList.add('on');setTimeout(()=>$('beat').classList.remove('on'),90)},gap);
   const up=setInterval(()=>{$('timer').textContent=Math.max(0,DUR-(performance.now()-start)/1000).toFixed(0)+' s'},200);
   await sleep(DUR*1000);
-  clearInterval(bi);clearInterval(up);rec.go=false;recording=false;$('timer').textContent='';$('recBtn').disabled=false;
-  finish();
+  clearInterval(bi);clearInterval(up);rec.go=false;recording=false;$('timer').textContent='';$('recBtn').disabled=false;finish();
 };
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-
 function finish(){
   const s=rec.s;if(s.length<50){$('err').textContent='Too few frames captured. Try again.';return}
   const t=s.map(o=>o.t),dur=(t[t.length-1]-t[0])/1000;
-  const pc=peaks(t,s.map(o=>o.m),220,.6);
-  let pm=null;if(s[0].a!==null)pm=peaks(t,s.map(o=>o.a),150,1.2);
+  const pc=peaks(t,s.map(o=>o.m),220,.6);let pm=null;if(s[0].a!==null)pm=peaks(t,s.map(o=>o.a),150,1.2);
   const id=(recs.length?Math.max(...recs.map(r=>r.id)):0)+1;
   recs.push({id,cond:rec.cond,split:rec.split,dur,ncam:pc.length,rcam:pc.length/dur,nmic:pm?pm.length:null,rmic:pm?pm.length/dur:null,man:null,samples:s.map(o=>[Math.round(o.t),+o.m.toFixed(3),o.a===null?'':+o.a.toFixed(5)])});
-  save();render();
+  sel=id;save();render();
 }
 function save(){try{localStorage.setItem('applause-recs',JSON.stringify(recs))}catch(e){}}
 
-// ---- results ----
+/* ---------- results ---------- */
 function pred(r,th){return th===null?null:(r.rcam>th?'fast':'slow')}
 function render(){
-  const th=threshold();const tb=$('rows');tb.innerHTML='';
+  const th=threshold(),tb=$('rows');tb.innerHTML='';
   recs.forEach(r=>{
-    const p=pred(r,th);const tr=document.createElement('tr');
-    const rm=r.man!=null?r.man/r.dur:null;
-    let chk='';if(rm!==null){const okc=(r.cond==='fast')===(rm>2);chk=okc?'<span class="ok">label ok</span>':'<span class="bad">check label</span>'}
-    tr.innerHTML=`<td>${r.id}</td><td>${r.cond}</td><td>${r.split}</td><td>${r.rcam.toFixed(2)}</td><td>${r.rmic==null?'–':r.rmic.toFixed(2)}</td><td><input type="number" min="0" value="${r.man??''}" aria-label="Claps counted by hand for recording ${r.id}" data-id="${r.id}"> ${chk}</td><td>${p?(p===r.cond?'<span class="ok">'+p+' ✓</span>':'<span class="bad">'+p+' ✗</span>'):'–'}</td><td><button aria-label="Delete recording ${r.id}" data-del="${r.id}" style="border:0;background:none;cursor:pointer">✕</button></td>`;
+    const p=pred(r,th),tr=document.createElement('tr'),rm=r.man!=null?r.man/r.dur:null;
+    let chk='';if(rm!==null){chk=((r.cond==='fast')===(rm>2))?'<span class="ok">label ok</span>':'<span class="bad">check label</span>'}
+    tr.className=r.id===sel?'sel':'';tr.dataset.id=r.id;
+    tr.innerHTML=`<td>${r.id}</td><td>${r.cond}</td><td>${r.split}</td><td>${r.rcam.toFixed(2)}</td><td>${r.rmic==null?'–':r.rmic.toFixed(2)}</td><td><input type="number" min="0" value="${r.man??''}" aria-label="Hand count for recording ${r.id}" data-id="${r.id}"> ${chk}</td><td>${p?(p===r.cond?'<span class="ok">'+p+' ✓</span>':'<span class="bad">'+p+' ✗</span>'):'–'}</td><td><button aria-label="Delete recording ${r.id}" data-del="${r.id}" style="border:0;background:none;cursor:pointer">✕</button></td>`;
     tb.appendChild(tr)});
+  tb.querySelectorAll('tr').forEach(tr=>tr.onclick=e=>{if(e.target.closest('input,button'))return;sel=+tr.dataset.id;render()});
   tb.querySelectorAll('input').forEach(i=>i.onchange=()=>{const r=recs.find(x=>x.id==i.dataset.id);r.man=i.value===''?null:+i.value;save();render()});
-  tb.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{recs=recs.filter(x=>x.id!=b.dataset.del);save();render()});
-  const te=recs.filter(r=>r.split==='test'&&th!==null);
-  const okn=te.filter(r=>pred(r,th)===r.cond).length;
+  tb.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{recs=recs.filter(x=>x.id!=b.dataset.del);if(sel==b.dataset.del)sel=null;save();render()});
+  const te=recs.filter(r=>r.split==='test'&&th!==null),okn=te.filter(r=>pred(r,th)===r.cond).length;
   let msg=th===null?'Need at least one slow and one fast design recording to set the threshold.':`Threshold ${th.toFixed(2)} claps/s (midpoint of design means). `;
   if(te.length){msg+=`Held-out test: ${okn}/${te.length} correct (${Math.round(okn/te.length*100)}%). `;
-    const wrong=te.filter(r=>pred(r,th)!==r.cond).map(r=>'#'+r.id);if(wrong.length)msg+='Misses: '+wrong.join(', ')+'. '}
+    const w=te.filter(r=>pred(r,th)!==r.cond).map(r=>'#'+r.id);if(w.length)msg+='Misses: '+w.join(', ')+'. '}
   if(th!==null&&te.length<4)msg+='Few test clips, so treat accuracy as rough.';
   if(recs.length)$('sum').textContent=msg;
-  drawChart(th);
+  drawChart(th);drawDetail();
 }
+let pts=[];
 function drawChart(th){
   const c=$('chart'),x=c.getContext('2d'),W=c.width,H=c.height;x.clearRect(0,0,W,H);
-  const L=50,R=20,T=30,B=50,ymax=5;
-  const Y=v=>H-B-(v/ymax)*(H-T-B);
-  x.font='15px system-ui';x.fillStyle='#6c7a96';x.strokeStyle='rgba(24,39,74,.12)';x.lineWidth=1;
-  for(let v=0;v<=5;v++){x.beginPath();x.moveTo(L,Y(v));x.lineTo(W-R,Y(v));x.stroke();x.fillText(v,24,Y(v)+5)}
-  x.save();x.translate(12,H/2);x.rotate(-Math.PI/2);x.fillText('claps/s (camera)',-50,0);x.restore();
+  const L=48,R=16,T=34,B=46,Y=v=>H-B-(Math.min(v,5)/5)*(H-T-B);pts=[];
+  if(th!==null){x.fillStyle='rgba(138,92,240,.12)';x.fillRect(L,T,W-L-R,Y(th)-T);x.fillStyle='rgba(59,107,214,.12)';x.fillRect(L,Y(th),W-L-R,H-B-Y(th))}
+  x.font='14px system-ui';x.strokeStyle='rgba(24,39,74,.1)';x.lineWidth=1;x.fillStyle='#66748f';
+  for(let v=0;v<=5;v++){x.beginPath();x.moveTo(L,Y(v));x.lineTo(W-R,Y(v));x.stroke();x.fillText(v,26,Y(v)+5)}
+  x.save();x.translate(12,H/2+40);x.rotate(-Math.PI/2);x.fillText('claps/s (camera)',0,0);x.restore();
   const cols={slow:L+(W-L-R)*.27,fast:L+(W-L-R)*.73};
-  x.fillStyle='#18274a';x.font='600 16px system-ui';x.fillText('Slow',cols.slow-18,H-18);x.fillText('Fast',cols.fast-17,H-18);
-  if(th!==null){x.setLineDash([8,6]);x.strokeStyle='#18274a';x.lineWidth=2;x.beginPath();x.moveTo(L,Y(th));x.lineTo(W-R,Y(th));x.stroke();x.setLineDash([]);x.font='13px system-ui';x.fillStyle='#18274a';x.fillText('threshold '+th.toFixed(2),L+6,Y(th)-6)}
+  x.font='600 15px system-ui';x.fillStyle=COL.slow;x.fillText('Slow clapping',cols.slow-45,H-16);x.fillStyle=COL.fast;x.fillText('Fast clapping',cols.fast-44,H-16);
+  ['slow','fast'].forEach(k=>{const l=recs.filter(r=>r.cond===k);if(l.length){const m=l.reduce((s,r)=>s+r.rcam,0)/l.length;x.strokeStyle=COL[k];x.globalAlpha=.4;x.lineWidth=2;x.beginPath();x.moveTo(cols[k]-85,Y(m));x.lineTo(cols[k]+85,Y(m));x.stroke();x.globalAlpha=1}});
+  if(th!==null){x.setLineDash([8,6]);x.strokeStyle='#18274a';x.lineWidth=2;x.beginPath();x.moveTo(L,Y(th));x.lineTo(W-R,Y(th));x.stroke();x.setLineDash([]);x.font='12px system-ui';x.fillStyle='#18274a';x.fillText('threshold '+th.toFixed(2),L+6,Y(th)-6);
+    x.fillStyle='rgba(106,56,214,.7)';x.fillText('reads as fast',W-R-84,T+14);x.fillStyle='rgba(33,80,184,.8)';x.fillText('reads as slow',W-R-86,H-B-8)}
   ['slow','fast'].forEach(k=>{recs.filter(r=>r.cond===k).forEach((r,i)=>{
-    const px=cols[k]+((i%7)-3)*22,py=Y(Math.min(r.rcam,ymax));
-    x.beginPath();x.arc(px,py,9,0,7);
-    if(r.split==='design'){x.fillStyle='#3b6bd6';x.fill()}else{x.fillStyle='#fff';x.fill();x.lineWidth=3;x.strokeStyle=th!==null&&((r.rcam>th?'fast':'slow')!==r.cond)?'#d1495b':'#3b6bd6';x.stroke()}
+    const px=cols[k]+((i%7)-3)*24,py=Y(r.rcam),wrong=th!==null&&r.split==='test'&&pred(r,th)!==r.cond;pts.push({x:px,y:py,id:r.id});
+    x.beginPath();x.arc(px,py,r.id===sel?12:9,0,7);
+    if(r.split==='design'){x.fillStyle=COL[k];x.fill()}else{x.fillStyle='#fff';x.fill();x.lineWidth=3.5;x.strokeStyle=wrong?'#d1495b':COL[k];x.stroke()}
+    if(r.id===sel){x.lineWidth=2;x.strokeStyle='#18274a';x.beginPath();x.arc(px,py,16,0,7);x.stroke()}
   })});
-  x.font='13px system-ui';x.fillStyle='#6c7a96';x.fillText('● design   ○ held-out test (red = wrong)',L,18);
+  x.font='12px system-ui';x.fillStyle='#66748f';x.fillText('● design    ○ held-out test (red ring = wrong)',L,20);
+}
+function hit(e){const c=$('chart'),b=c.getBoundingClientRect(),k=c.width/b.width,mx=(e.clientX-b.left)*k,my=(e.clientY-b.top)*k;
+  return {p:pts.find(p=>Math.hypot(p.x-mx,p.y-my)<16),b,k}}
+$('chart').addEventListener('mousemove',e=>{const {p,b,k}=hit(e),tp=$('tip');
+  if(!p){tp.style.opacity=0;$('chart').style.cursor='default';return}
+  const r=recs.find(r=>r.id===p.id),th=threshold(),pr=pred(r,th);$('chart').style.cursor='pointer';
+  tp.innerHTML=`<b>#${r.id} ${r.cond}, ${r.split}</b><br>camera ${r.rcam.toFixed(2)}/s${r.rmic!=null?' · mic '+r.rmic.toFixed(2)+'/s':''}${r.man!=null?' · hand '+(r.man/r.dur).toFixed(2)+'/s':''}${pr?'<br>read as '+pr:''}`;
+  tp.style.left=(p.x/k)+'px';tp.style.top=(p.y/k)+'px';tp.style.opacity=1});
+$('chart').addEventListener('mouseleave',()=>$('tip').style.opacity=0);
+$('chart').addEventListener('click',e=>{const {p}=hit(e);if(p){sel=p.id;render()}});
+
+function drawDetail(){
+  const c=$('detail'),x=c.getContext('2d'),W=c.width,H=c.height;x.clearRect(0,0,W,H);
+  const r=recs.find(r=>r.id===sel);if(!r){x.fillStyle='#66748f';x.font='15px system-ui';x.fillText('No recording selected',20,H/2);return}
+  const t=r.samples.map(s=>s[0]),m=r.samples.map(s=>s[1]),a=r.samples.map(s=>s[2]===''?null:s[2]),T=t[t.length-1],px=ms=>20+ms/T*(W-40);
+  const pm=Math.max(...m,1),y=v=>H-26-(v/pm)*(H-56);
+  x.strokeStyle='rgba(24,39,74,.25)';x.setLineDash([3,5]);x.lineWidth=1;
+  for(let k=1/RATE[r.cond];k*1000<T;k+=1/RATE[r.cond]){x.beginPath();x.moveTo(px(k*1000),24);x.lineTo(px(k*1000),H-14);x.stroke()}x.setLineDash([]);
+  if(a[0]!==null){const am=Math.max(...a,1e-6);x.strokeStyle='rgba(255,122,168,.8)';x.lineWidth=1.5;x.beginPath();a.forEach((v,i)=>{const yy=H-26-(v/am)*(H-56);i?x.lineTo(px(t[i]),yy):x.moveTo(px(t[i]),yy)});x.stroke()}
+  x.strokeStyle=COL[r.cond];x.lineWidth=2.5;x.lineJoin='round';x.beginPath();m.forEach((v,i)=>{i?x.lineTo(px(t[i]),y(v)):x.moveTo(px(t[i]),y(v))});x.stroke();
+  peaks(t,m,220,.6).forEach(i=>{x.fillStyle='#fff';x.strokeStyle='#18274a';x.lineWidth=2.5;x.beginPath();x.arc(px(t[i]),y(m[i]),5,0,7);x.fill();x.stroke()});
+  x.font='12px system-ui';x.fillStyle='#66748f';x.fillText('blue/violet = camera motion · pink = microphone · dotted = expected beat',20,16);
+  const th=threshold(),pr=pred(r,th);
+  $('detTxt').textContent=`#${r.id}: true condition ${r.cond}. Camera counted ${r.ncam} claps in ${r.dur.toFixed(1)} s (${r.rcam.toFixed(2)}/s)${r.nmic!=null?', mic counted '+r.nmic:''}${r.man!=null?', hand count '+r.man:''}${pr?'. Meter reads: '+pr+'.':'.'}`;
 }
 
-// ---- export ----
+/* ---------- export ---------- */
 function dl(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click()}
-$('dlS').onclick=()=>{const th=threshold();
-  let s='rec_id,true_condition,split,duration_s,cam_claps,cam_rate,mic_claps,mic_rate,hand_count,hand_rate,predicted,correct\n';
+$('dlS').onclick=()=>{const th=threshold();let s='rec_id,true_condition,split,duration_s,cam_claps,cam_rate,mic_claps,mic_rate,hand_count,hand_rate,predicted,correct\n';
   recs.forEach(r=>{const p=pred(r,th);s+=[r.id,r.cond,r.split,r.dur.toFixed(2),r.ncam,r.rcam.toFixed(3),r.nmic??'',r.rmic==null?'':r.rmic.toFixed(3),r.man??'',r.man==null?'':(r.man/r.dur).toFixed(3),p??'',p?(p===r.cond?1:0):''].join(',')+'\n'});
   dl('applause_summary.csv',s,'text/csv')};
-$('dlR').onclick=()=>{let s='rec_id,true_condition,split,t_ms,motion,audio_rms\n';
-  recs.forEach(r=>r.samples.forEach(o=>{s+=[r.id,r.cond,r.split,...o].join(',')+'\n'}));dl('applause_raw.csv',s,'text/csv')};
+$('dlR').onclick=()=>{let s='rec_id,true_condition,split,t_ms,motion,audio_rms\n';recs.forEach(r=>r.samples.forEach(o=>{s+=[r.id,r.cond,r.split,...o].join(',')+'\n'}));dl('applause_raw.csv',s,'text/csv')};
 $('dlP').onclick=()=>{const a=document.createElement('a');a.href=$('chart').toDataURL('image/png');a.download='applause_chart.png';a.click()};
-$('clr').onclick=()=>{if(confirm('Delete all recordings?')){recs=[];save();render();$('sum').textContent='No recordings yet.'}};
+$('clr').onclick=()=>{if(confirm('Delete all recordings?')){recs=[];sel=null;save();render();$('sum').textContent='No recordings yet.'}};
 render();
 </script>
 </body>
